@@ -87,7 +87,7 @@ class TestCommentAPI:
             data=data
         )
         assert response.status_code == HTTPStatus.CREATED, (
-            'Проверьте, что POST-запрос с корректными данными от '
+            'Проверьте, что POST-запрос с корректнымиcd  данными от '
             'авторизованного пользователя к '
             '`/api/v1/posts/{post.id}/comments/` возвращает ответ со '
             'статусом 201.'
