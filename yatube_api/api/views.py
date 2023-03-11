@@ -1,37 +1,44 @@
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 from posts.models import Comment, Group, Post
-from .mixins import CreateUpdateDestroyForOwnerMixin
+from .mixins import CustomCreateMixin
+from .permissions import OwnerOrReadOnly
 from .serializers import CommentSerializer, GroupSerializer, PostSerializer
 
 
-class PostViewSet(CreateUpdateDestroyForOwnerMixin, viewsets.ModelViewSet):
+class PostViewSet(CustomCreateMixin, viewsets.ModelViewSet):
     """
     ViewSet for Post.
-    Allows methods: GET, POST, PUT, PATCH, DELETE.
-    PUT, PATCH, DELETE - available for authors.
+    Permission for authorized: GET, POST.
+    Permission for authors - PUT, PATCH, DELETE.
     """
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated & OwnerOrReadOnly]
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for Group.
-    Allows methods: Get.
+    Permission for authorized: GET.
     """
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
+    permission_classes = [IsAuthenticated]
 
 
-class CommentViewSet(CreateUpdateDestroyForOwnerMixin, viewsets.ModelViewSet):
+class CommentViewSet(CustomCreateMixin, viewsets.ModelViewSet):
     """
     ViewSet for Comment.
-    Allows methods: GET, POST, PUT, PATCH, DELETE.
-    PUT, PATCH, DELETE - available for authors.
+    Permission for authorized: GET, POST.
+    Permission for authors - PUT, PATCH, DELETE.
     """
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated & OwnerOrReadOnly]
 
     def get_queryset(self):
         post_id = self.kwargs.get("post_id")
-        return Comment.objects.filter(post=post_id)
+        post = get_object_or_404(Post, id=post_id)
+        return post.comments.all()
