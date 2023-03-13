@@ -1,13 +1,12 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from posts.models import Comment, Group, Post
-from .mixins import CustomCreateMixin
+from posts.models import Group, Post
 from .permissions import OwnerOrReadOnly
 from .serializers import CommentSerializer, GroupSerializer, PostSerializer
 
 
-class PostViewSet(CustomCreateMixin, viewsets.ModelViewSet):
+class PostViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Post.
     Permission for authorized: GET, POST.
@@ -16,6 +15,9 @@ class PostViewSet(CustomCreateMixin, viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated & OwnerOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
@@ -28,13 +30,12 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
-class CommentViewSet(CustomCreateMixin, viewsets.ModelViewSet):
+class CommentViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Comment.
     Permission for authorized: GET, POST.
     Permission for authors - PUT, PATCH, DELETE.
     """
-    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated & OwnerOrReadOnly]
 
@@ -42,3 +43,9 @@ class CommentViewSet(CustomCreateMixin, viewsets.ModelViewSet):
         post_id = self.kwargs.get("post_id")
         post = get_object_or_404(Post, id=post_id)
         return post.comments.all()
+
+    def perform_create(self, serializer):
+        serializer.save(
+            author=self.request.user,
+            post_id=self.kwargs.get('post_id')
+        )
